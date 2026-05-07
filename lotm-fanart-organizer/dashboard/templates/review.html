@@ -1,0 +1,14 @@
+{% extends "base.html" %}{% block content %}
+<h2>Next Pending</h2>
+{% if item %}
+<img src="file://{{ item.path }}" style="max-width:100%">
+<form method="post" action="/review">
+<input type="hidden" name="image_id" value="{{ item.id }}">
+<label>Core tags</label><input name="core_tags" value="{{ item.core_tags|join(', ') }}">
+<label>Attribute tags</label><input value="{{ item.attribute_tags|join(', ') }}" disabled>
+<label>Assigned folder</label><input name="assigned_folder" value="{{ item.assigned_folder }}">
+<button name="status" value="approved">Approve</button><button name="status" value="rejected">Reject</button>
+</form>
+<form method="post" action="/reprocess"><button>Reprocess</button></form>
+{% else %}<p>No pending images.</p>{% endif %}
+{% endblock %}

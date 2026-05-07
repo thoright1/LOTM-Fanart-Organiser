@@ -1,23 +1,10 @@
-{
-  "group_rules": [
-    {
-      "name": "Hall_of_Truth",
-      "required_tags": ["klein", "audrey", "leonard"]
-    },
-    {
-      "name": "Tarot_Club",
-      "required_tags": ["klein", "fors", "audrey"]
-    },
-    {
-      "name": "Gehrman_Solo",
-      "required_tags": ["gehrman"]
-    }
-  ],
-  "single_tag_folders": {
-    "klein": "Klein",
-    "audrey": "Audrey",
-    "leonard": "Leonard",
-    "fors": "Fors",
-    "gehrman": "Gehrman"
+[
+  {
+    "tags": ["klein", "audrey"],
+    "folder": "Hall_of_Truth"
+  },
+  {
+    "tags": ["klein"],
+    "folder": "Klein"
   }
-}
+]

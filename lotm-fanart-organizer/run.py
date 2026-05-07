@@ -1,41 +1,24 @@
 from __future__ import annotations
 
-import argparse
 from pathlib import Path
 
 from core.ingest import ingest_gallery_dl
+from core.settings import SettingsManager
 from core.sorter import sort_records
 
 BASE_DIR = Path(__file__).resolve().parent
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="LOTM Fanart Organizer")
-    parser.add_argument(
-        "--source",
-        type=Path,
-        default=BASE_DIR / "data" / "raw",
-        help="Path to gallery-dl output folder",
-    )
-    parser.add_argument(
-        "--mode",
-        choices=["copy", "move"],
-        default="copy",
-        help="How to place files into sorted folders",
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Parse and classify without moving/copying files",
-    )
-    args = parser.parse_args()
-
-    records = ingest_gallery_dl(source_dir=args.source, base_dir=BASE_DIR)
-    result = sort_records(records=records, base_dir=BASE_DIR, mode=args.mode, dry_run=args.dry_run)
-
-    print(f"Processed: {result['processed']}")
-    print(f"Sorted: {result['sorted']}")
-    print(f"Unsorted: {result['unsorted']}")
+    settings = SettingsManager(BASE_DIR / "config" / "settings.json").load()
+    current = settings.get("current_import_dir")
+    if not current:
+        print("No current_import_dir set. Configure via /settings UI.")
+        return
+    source = Path(current).expanduser()
+    records = ingest_gallery_dl(source)
+    result = sort_records(records, BASE_DIR, str(source), mode="copy", dry_run=False)
+    print(result)
 
 
 if __name__ == "__main__":

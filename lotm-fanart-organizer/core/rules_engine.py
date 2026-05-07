@@ -6,20 +6,17 @@ from pathlib import Path
 
 class RulesEngine:
     def __init__(self, rules_path: Path) -> None:
-        raw = json.loads(rules_path.read_text(encoding="utf-8"))
-        self.group_rules = raw.get("group_rules", [])
-        self.single_tag_folders = raw.get("single_tag_folders", {})
+        try:
+            raw = json.loads(rules_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            raw = []
+        self.rules: list[dict[str, object]] = raw if isinstance(raw, list) else []
 
-    def assign_folder(self, normalized_tags: list[str]) -> str:
-        tag_set = set(normalized_tags)
-
-        for rule in self.group_rules:
-            required = set(rule.get("required_tags", []))
-            if required and required.issubset(tag_set):
-                return rule["name"]
-
-        for tag in normalized_tags:
-            if tag in self.single_tag_folders:
-                return self.single_tag_folders[tag]
-
+    def assign_folder(self, core_tags: list[str]) -> str:
+        tag_set = set(core_tags)
+        for rule in self.rules:
+            required = set(rule.get("tags", []))
+            folder = rule.get("folder")
+            if required and required.issubset(tag_set) and isinstance(folder, str):
+                return folder
         return "unsorted"
