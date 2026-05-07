@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% block content %}
+<h2>Rules</h2>
+<form method="post" action="/rules/add"><input name="tags" placeholder="klein,audrey"><input name="folder" placeholder="Hall_of_Truth"><button>Add Rule</button></form>
+<ul>{% for r in rules %}<li>{{ r.tags|join(', ') }} => {{ r.folder }}</li>{% endfor %}</ul>
+{% endblock %}

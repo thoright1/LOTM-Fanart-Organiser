@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% block content %}
+<h2>Glossary</h2>
+<form method="post" action="/glossary/add"><input name="raw_tag" placeholder="raw tag"><input name="canonical_tag" placeholder="canonical"><button>Add</button></form>
+<ul>{% for k,v in glossary.items() %}<li>{{ k }} → {{ v }}</li>{% endfor %}</ul>
+{% endblock %}

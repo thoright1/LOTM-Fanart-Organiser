@@ -22,64 +22,61 @@ class ImageDB:
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS images (
-                    filename TEXT PRIMARY KEY,
-                    path TEXT NOT NULL,
-                    normalized_tags TEXT NOT NULL,
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    filename TEXT NOT NULL,
+                    path TEXT UNIQUE NOT NULL,
+                    core_tags TEXT NOT NULL,
+                    attribute_tags TEXT NOT NULL,
                     assigned_folder TEXT NOT NULL,
                     status TEXT NOT NULL CHECK(status IN ('pending', 'approved', 'rejected')),
+                    source_folder TEXT NOT NULL,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
                 """
             )
 
-    def upsert_image(
-        self,
-        filename: str,
-        path: str,
-        normalized_tags: list[str],
-        assigned_folder: str,
-        status: str = "pending",
-    ) -> None:
-        payload = (filename, path, json.dumps(normalized_tags, ensure_ascii=False), assigned_folder, status)
+    def upsert_image(self, filename: str, path: str, core_tags: list[str], attribute_tags: list[str], assigned_folder: str, status: str, source_folder: str) -> None:
         with self._connect() as conn:
             conn.execute(
                 """
-                INSERT INTO images (filename, path, normalized_tags, assigned_folder, status)
-                VALUES (?, ?, ?, ?, ?)
-                ON CONFLICT(filename) DO UPDATE SET
-                    path=excluded.path,
-                    normalized_tags=excluded.normalized_tags,
+                INSERT INTO images (filename, path, core_tags, attribute_tags, assigned_folder, status, source_folder)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(path) DO UPDATE SET
+                    filename=excluded.filename,
+                    core_tags=excluded.core_tags,
+                    attribute_tags=excluded.attribute_tags,
                     assigned_folder=excluded.assigned_folder,
                     status=excluded.status,
+                    source_folder=excluded.source_folder,
                     updated_at=CURRENT_TIMESTAMP
                 """,
-                payload,
+                (filename, path, json.dumps(core_tags, ensure_ascii=False), json.dumps(attribute_tags, ensure_ascii=False), assigned_folder, status, source_folder),
             )
 
     def get_next_pending(self) -> dict[str, Any] | None:
         with self._connect() as conn:
-            row = conn.execute(
-                "SELECT filename, path, normalized_tags, assigned_folder, status FROM images WHERE status='pending' ORDER BY updated_at ASC LIMIT 1"
-            ).fetchone()
-        if row is None:
+            row = conn.execute("SELECT * FROM images WHERE status='pending' ORDER BY id ASC LIMIT 1").fetchone()
+        if not row:
             return None
-        data = dict(row)
-        data["normalized_tags"] = json.loads(data["normalized_tags"])
-        return data
+        item = dict(row)
+        item["core_tags"] = json.loads(item["core_tags"])
+        item["attribute_tags"] = json.loads(item["attribute_tags"])
+        return item
 
-    def update_decision(
-        self,
-        filename: str,
-        status: str,
-        normalized_tags: list[str],
-        assigned_folder: str,
-    ) -> None:
+    def update_review(self, image_id: int, core_tags: list[str], assigned_folder: str, status: str) -> None:
         with self._connect() as conn:
             conn.execute(
-                """
-                UPDATE images
-                SET status=?, normalized_tags=?, assigned_folder=?, updated_at=CURRENT_TIMESTAMP
-                WHERE filename=?
-                """,
-                (status, json.dumps(normalized_tags, ensure_ascii=False), assigned_folder, filename),
+                "UPDATE images SET core_tags=?, assigned_folder=?, status=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                (json.dumps(core_tags, ensure_ascii=False), assigned_folder, status, image_id),
             )
+
+    def all_pending(self) -> list[dict[str, Any]]:
+        with self._connect() as conn:
+            rows = conn.execute("SELECT * FROM images WHERE status='pending'").fetchall()
+        out = []
+        for r in rows:
+            d = dict(r)
+            d["core_tags"] = json.loads(d["core_tags"])
+            d["attribute_tags"] = json.loads(d["attribute_tags"])
+            out.append(d)
+        return out
