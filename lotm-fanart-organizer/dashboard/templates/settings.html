@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% block content %}
+<h2>Settings</h2>
+<form method="post" action="/settings/update">
+<label>Import folder path</label>
+<input name="import_dir" value="{{ settings.current_import_dir or '' }}" placeholder="/path/to/images">
+<button name="run_ingestion" value="0">Save only</button>
+<button name="run_ingestion" value="1">Run ingestion</button>
+</form>
+<h3>Recent folders</h3><ul>{% for path in settings.recent_import_dirs %}<li><form method="post" action="/settings/update"><input type="hidden" name="import_dir" value="{{ path }}"><button>{{ path }}</button></form></li>{% endfor %}</ul>
+{% endblock %}
